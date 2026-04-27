@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Temporizador de Productividad</title>
+    <meta
+      name="description"
+      content="Aplicación web responsiva para organizar sesiones de trabajo y descanso con ciclos configurables."
+    />
+
+    <!-- #### Favicon #### -->
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="./assets/images/favicon/apple-touch-icon.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="./assets/images/favicon/favicon-32x32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="./assets/images/favicon/favicon-16x16.png"
+    />
+    <link rel="manifest" href="./assets/images/favicon/site.webmanifest" />
+    <link rel="shortcut icon" href="./assets/images/favicon/favicon.ico" />
+
+    <!-- #### Estilos #### -->
+    <link rel="stylesheet" href="./assets/css/styles.css" />
+  </head>
+  <body>
+    <!-- #### Encabezado principal #### -->
+    <header class="encabezado-principal">
+      <div class="contenedor">
+        <div class="marca-app">
+          <img
+            src="./assets/images/timer.svg"
+            alt="Ícono del temporizador de productividad"
+            title="Temporizador de productividad"
+            class="icono-app"
+          />
+
+          <div class="texto-marca">
+            <h1>Temporizador de Productividad</h1>
+            <p>
+              Organiza tus sesiones de trabajo y descanso con una configuración
+              flexible, visual y adaptable a distintas actividades.
+            </p>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- #### Contenido principal #### -->
+    <main class="contenedor">
+      <!-- #### Introducción / guía de uso #### -->
+      <section
+        class="bloque-introduccion"
+        aria-labelledby="titulo-introduccion"
+      >
+        <article class="tarjeta">
+          <h2 id="titulo-introduccion">¿Cómo usar este temporizador?</h2>
+          <p>
+            Configura tu tiempo de trabajo, tu tiempo de descanso y la cantidad
+            de ciclos que deseas realizar. Después, presiona iniciar y deja que
+            la aplicación te acompañe durante toda tu sesión.
+          </p>
+          <p>
+            Puedes usarlo para estudiar, entrenar, leer, limpiar o cualquier
+            actividad que necesite enfoque, pausas controladas y seguimiento
+            visual del tiempo.
+          </p>
+        </article>
+      </section>
+
+      <!-- #### Panel principal #### -->
+      <section
+        class="panel-principal"
+        aria-label="Panel principal del temporizador"
+      >
+        <!-- #### Configuración de la sesión #### -->
+        <section
+          class="panel-configuracion"
+          aria-labelledby="titulo-configuracion"
+        >
+          <article class="tarjeta">
+            <header class="cabecera-seccion">
+              <h2 id="titulo-configuracion">Configuración de la sesión</h2>
+              <p>Define tus tiempos en minutos y segundos antes de comenzar.</p>
+            </header>
+
+            <form id="formulario-temporizador" class="formulario-temporizador">
+              <!-- #### Tiempo de trabajo #### -->
+              <fieldset class="grupo-campos" aria-labelledby="titulo-trabajo">
+                <legend id="titulo-trabajo">Tiempo de trabajo</legend>
+
+                <div class="fila-campos">
+                  <div class="campo-formulario">
+                    <label for="trabajo-minutos">Minutos</label>
+                    <input
+                      type="number"
+                      id="trabajo-minutos"
+                      name="trabajo-minutos"
+                      min="0"
+                      step="1"
+                      placeholder="Ejemplo: 25"
+                      required
+                    />
+                  </div>
+
+                  <div class="campo-formulario">
+                    <label for="trabajo-segundos">Segundos</label>
+                    <input
+                      type="number"
+                      id="trabajo-segundos"
+                      name="trabajo-segundos"
+                      min="0"
+                      max="59"
+                      step="1"
+                      placeholder="Ejemplo: 0"
+                      required
+                    />
+                  </div>
+                </div>
+              </fieldset>
+
+              <!-- #### Tiempo de descanso #### -->
+              <fieldset class="grupo-campos" aria-labelledby="titulo-descanso">
+                <legend id="titulo-descanso">Tiempo de descanso</legend>
+
+                <div class="fila-campos">
+                  <div class="campo-formulario">
+                    <label for="descanso-minutos">Minutos</label>
+                    <input
+                      type="number"
+                      id="descanso-minutos"
+                      name="descanso-minutos"
+                      min="0"
+                      step="1"
+                      placeholder="Ejemplo: 5"
+                      required
+                    />
+                  </div>
+
+                  <div class="campo-formulario">
+                    <label for="descanso-segundos">Segundos</label>
+                    <input
+                      type="number"
+                      id="descanso-segundos"
+                      name="descanso-segundos"
+                      min="0"
+                      max="59"
+                      step="1"
+                      placeholder="Ejemplo: 30"
+                      required
+                    />
+                  </div>
+                </div>
+              </fieldset>
+
+              <!-- #### Cantidad de ciclos #### -->
+              <div class="campo-formulario">
+                <label for="cantidad-ciclos">Cantidad de ciclos</label>
+                <input
+                  type="number"
+                  id="cantidad-ciclos"
+                  name="cantidad-ciclos"
+                  min="1"
+                  step="1"
+                  placeholder="Ejemplo: 4"
+                  required
+                />
+              </div>
+
+              <!-- #### Controles principales #### -->
+              <div class="grupo-botones grupo-botones-configuracion">
+                <button type="submit" id="btn-iniciar">Iniciar</button>
+                <button type="button" id="btn-pausar">Pausar</button>
+                <button type="button" id="btn-reanudar">Reanudar</button>
+                <button type="button" id="btn-reiniciar">Reiniciar</button>
+              </div>
+            </form>
+          </article>
+        </section>
+
+        <!-- #### Visualizador del temporizador #### -->
+        <section
+          class="panel-temporizador"
+          aria-labelledby="titulo-temporizador"
+        >
+          <article class="tarjeta tarjeta-temporizador">
+            <header class="cabecera-seccion">
+              <h2 id="titulo-temporizador">Temporizador</h2>
+              <p>
+                Aquí se mostrará el tiempo restante, el estado actual y el
+                avance de la sesión.
+              </p>
+            </header>
+
+            <!-- #### Estado actual #### -->
+            <div class="estado-sesion" id="bloque-estado">
+              <h3>Estado actual</h3>
+              <p id="estado-actual">Esperando configuración</p>
+            </div>
+
+            <!-- #### Contador principal #### -->
+            <div class="contador-principal" aria-live="polite">
+              <p class="etiqueta-contador">Tiempo restante</p>
+              <div id="tiempo-restante">00:00</div>
+            </div>
+
+            <!-- #### Ciclo actual #### -->
+            <div class="estado-ciclo">
+              <h3>Ciclo actual</h3>
+              <p id="ciclo-actual">0 de 0</p>
+            </div>
+
+            <!-- #### Mensaje de apoyo #### -->
+            <div class="mensaje-apoyo">
+              <p id="mensaje-apoyo">
+                Configura tus tiempos y presiona iniciar para comenzar.
+              </p>
+            </div>
+          </article>
+        </section>
+      </section>
+
+      <!-- #### Resumen rápido #### -->
+      <section class="bloque-resumen" aria-labelledby="titulo-resumen">
+        <article class="tarjeta">
+          <header class="cabecera-seccion">
+            <h2 id="titulo-resumen">Resumen rápido</h2>
+            <p>Este bloque muestra la configuración actual de tu sesión.</p>
+          </header>
+
+          <div class="resumen-sesion">
+            <div class="item-resumen">
+              <h3>Trabajo</h3>
+              <p id="resumen-trabajo">00:00</p>
+            </div>
+
+            <div class="item-resumen">
+              <h3>Descanso</h3>
+              <p id="resumen-descanso">00:00</p>
+            </div>
+
+            <div class="item-resumen">
+              <h3>Ciclos</h3>
+              <p id="resumen-ciclos">0</p>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <!-- #### Bloque motivacional #### -->
+      <section class="bloque-observaciones" aria-labelledby="titulo-motivacion">
+        <article class="tarjeta">
+          <h2 id="titulo-motivacion">Enfoque y constancia</h2>
+          <p>
+            Trabajar por bloques te ayuda a mantener la atención, administrar
+            mejor tu energía y convertir actividades grandes en sesiones más
+            claras y alcanzables.
+          </p>
+        </article>
+      </section>
+    </main>
+
+    <!-- #### Recurso de audio #### -->
+    <audio
+      id="audio-alerta"
+      src="./assets/sounds/alarm.mp3"
+      preload="auto"
+    ></audio>
+
+    <!-- #### Pie de página #### -->
+    <footer class="pie-pagina">
+      <div class="contenedor">
+        <p>&copy; 2026 Carlos Chávez. Todos los derechos reservados.</p>
+        <small>
+          Proyecto de práctica y desarrollo progresivo de una aplicación web
+          responsiva de productividad.
+        </small>
+      </div>
+    </footer>
+
+    <!-- #### Script principal #### -->
+    <script src="./assets/js/index.js"></script>
+  </body>
+</html>
