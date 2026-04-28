@@ -38,9 +38,18 @@ const audioAlerta = document.getElementById("audio-alerta");
 
 // #### Estado global de la aplicación ####
 
-// Identificador del intervalo activo.
-// Se utiliza con setInterval y clearInterval.
+// Intervalo del temporizador principal.
 let intervaloTemporizador = null;
+
+// Intervalo usado para la cuenta previa de inicio.
+let intervaloCuentaPrevia = null;
+
+// Intervalo usado para la secuencia final de alertas.
+let intervaloAlertaFinal = null;
+
+// Token de control para invalidar procesos asíncronos anteriores.
+// Se incrementa cada vez que se inicia o reinicia la sesión.
+let tokenSesion = 0;
 
 // Configuración de la sesión expresada en segundos.
 let duracionTrabajoSegundos = 0;
@@ -52,6 +61,7 @@ let cicloEnCurso = 0;
 let esTrabajo = true;
 let estaPausado = false;
 let sesionIniciada = false;
+let cuentaPreviaActiva = false;
 
 // Tiempo restante de la fase actual, expresado en segundos.
 let tiempoRestanteSegundos = 0;
@@ -97,9 +107,8 @@ function limpiarEstadosVisuales() {
   bloqueEstado.classList.remove("estado-trabajo", "estado-descanso", "estado-pausado");
 }
 
-// Reproduce el audio de alerta.
-// Algunos navegadores pueden bloquear la reproducción automática.
-function reproducirAlerta() {
+// Reproduce el audio una sola vez.
+function reproducirAlertaUnaVez() {
   if (!audioAlerta) return;
 
   audioAlerta.currentTime = 0;
@@ -109,9 +118,34 @@ function reproducirAlerta() {
   });
 }
 
+// Reproduce la secuencia final: 3 sonidos, uno por segundo.
+function reproducirSecuenciaFinal() {
+  detenerAlertaFinal();
+
+  let repeticionesRealizadas = 0;
+
+  reproducirAlertaUnaVez();
+  repeticionesRealizadas++;
+
+  intervaloAlertaFinal = setInterval(() => {
+    reproducirAlertaUnaVez();
+    repeticionesRealizadas++;
+
+    if (repeticionesRealizadas >= 3) {
+      detenerAlertaFinal();
+    }
+  }, 1000);
+}
+
 // Actualiza el estado textual y visual del temporizador.
 function actualizarEstadoVisual() {
   limpiarEstadosVisuales();
+
+  if (cuentaPreviaActiva) {
+    estadoActual.textContent = "Preparando inicio";
+    mensajeApoyo.textContent = "La sesión comenzará en unos segundos.";
+    return;
+  }
 
   if (!sesionIniciada) {
     estadoActual.textContent = "Esperando configuración";
@@ -137,12 +171,37 @@ function actualizarEstadoVisual() {
   }
 }
 
-// Detiene el intervalo activo.
-function detenerIntervalo() {
+// Detiene el intervalo del temporizador principal.
+function detenerTemporizador() {
   if (intervaloTemporizador !== null) {
     clearInterval(intervaloTemporizador);
     intervaloTemporizador = null;
   }
+}
+
+// Detiene la cuenta previa.
+function detenerCuentaPrevia() {
+  if (intervaloCuentaPrevia !== null) {
+    clearInterval(intervaloCuentaPrevia);
+    intervaloCuentaPrevia = null;
+  }
+
+  cuentaPreviaActiva = false;
+}
+
+// Detiene la secuencia final de alertas.
+function detenerAlertaFinal() {
+  if (intervaloAlertaFinal !== null) {
+    clearInterval(intervaloAlertaFinal);
+    intervaloAlertaFinal = null;
+  }
+}
+
+// Detiene cualquier proceso activo relacionado con el flujo.
+function detenerProcesosActivos() {
+  detenerTemporizador();
+  detenerCuentaPrevia();
+  detenerAlertaFinal();
 }
 
 
@@ -156,7 +215,6 @@ function validarDatos(
   descansoSegundos,
   ciclos
 ) {
-  // Verifica que todos los valores sean numéricos.
   if (
     Number.isNaN(trabajoMinutos) ||
     Number.isNaN(trabajoSegundos) ||
@@ -168,7 +226,6 @@ function validarDatos(
     return false;
   }
 
-  // Verifica que no existan valores negativos.
   if (
     trabajoMinutos < 0 ||
     trabajoSegundos < 0 ||
@@ -180,25 +237,21 @@ function validarDatos(
     return false;
   }
 
-  // Verifica el rango correcto de segundos.
   if (trabajoSegundos > 59 || descansoSegundos > 59) {
     alert("Los segundos deben estar entre 0 y 59.");
     return false;
   }
 
-  // Verifica que el tiempo de trabajo no quede en cero.
   if (trabajoMinutos === 0 && trabajoSegundos === 0) {
     alert("Debes configurar un tiempo de trabajo mayor que cero.");
     return false;
   }
 
-  // Verifica que el tiempo de descanso no quede en cero.
   if (descansoMinutos === 0 && descansoSegundos === 0) {
     alert("Debes configurar un tiempo de descanso mayor que cero.");
     return false;
   }
 
-  // Límites razonables para esta fase del proyecto.
   if (trabajoMinutos > 480) {
     alert("El tiempo de trabajo no debe superar 480 minutos en esta versión.");
     return false;
@@ -249,6 +302,7 @@ function configurarSesion() {
   esTrabajo = true;
   estaPausado = false;
   sesionIniciada = true;
+  cuentaPreviaActiva = false;
   tiempoRestanteSegundos = duracionTrabajoSegundos;
 
   actualizarResumen();
@@ -260,19 +314,55 @@ function configurarSesion() {
 }
 
 
+// #### Cuenta previa de inicio ####
+
+// Ejecuta una cuenta de 3 segundos con sonido antes de iniciar la sesión.
+function ejecutarCuentaPrevia(tokenActual) {
+  return new Promise((resolve) => {
+    detenerCuentaPrevia();
+
+    cuentaPreviaActiva = true;
+    actualizarEstadoVisual();
+
+    let segundosCuenta = 3;
+
+    tiempoRestante.textContent = formatearTiempo(segundosCuenta);
+    reproducirAlertaUnaVez();
+
+    intervaloCuentaPrevia = setInterval(() => {
+      // Si el token cambió, la operación ya no es válida.
+      if (tokenActual !== tokenSesion) {
+        detenerCuentaPrevia();
+        resolve(false);
+        return;
+      }
+
+      segundosCuenta--;
+
+      if (segundosCuenta > 0) {
+        tiempoRestante.textContent = formatearTiempo(segundosCuenta);
+        reproducirAlertaUnaVez();
+      } else {
+        detenerCuentaPrevia();
+        tiempoRestanteSegundos = duracionTrabajoSegundos;
+        actualizarContador();
+        actualizarEstadoVisual();
+        resolve(true);
+      }
+    }, 1000);
+  });
+}
+
+
 // #### Motor del temporizador ####
 
 // Cambia entre trabajo y descanso.
 // Si se completan todos los ciclos, finaliza la sesión.
 function cambiarFase() {
-  reproducirAlerta();
-
   if (esTrabajo) {
-    // Si termina el trabajo, cambia a descanso.
     esTrabajo = false;
     tiempoRestanteSegundos = duracionDescansoSegundos;
   } else {
-    // Si termina el descanso, evalúa si aún faltan ciclos.
     if (cicloEnCurso < totalCiclos) {
       cicloEnCurso++;
       esTrabajo = true;
@@ -283,15 +373,15 @@ function cambiarFase() {
     }
   }
 
+  reproducirAlertaUnaVez();
   actualizarCicloVisual();
   actualizarContador();
   actualizarEstadoVisual();
 }
 
-// Ejecuta el temporizador.
-// Reduce un segundo por iteración mientras la sesión esté activa.
+// Ejecuta el temporizador principal.
 function ejecutarTemporizador() {
-  detenerIntervalo();
+  detenerTemporizador();
 
   intervaloTemporizador = setInterval(() => {
     if (tiempoRestanteSegundos > 0) {
@@ -305,10 +395,11 @@ function ejecutarTemporizador() {
 
 // Finaliza completamente la sesión actual.
 function finalizarSesion() {
-  detenerIntervalo();
+  detenerTemporizador();
 
   sesionIniciada = false;
   estaPausado = false;
+  cuentaPreviaActiva = false;
 
   limpiarEstadosVisuales();
   estadoActual.textContent = "Sesión completada";
@@ -316,19 +407,34 @@ function finalizarSesion() {
   cicloActual.textContent = `${totalCiclos} de ${totalCiclos}`;
   tiempoRestante.textContent = "00:00";
 
-  reproducirAlerta();
+  reproducirSecuenciaFinal();
 }
 
 
 // #### Acciones del usuario ####
 
-// Inicia una nueva sesión.
-function iniciarSesion(event) {
+// Inicia una nueva sesión con cuenta previa.
+async function iniciarSesion(event) {
   event.preventDefault();
+
+  detenerProcesosActivos();
+
+  tokenSesion++;
+  const tokenActual = tokenSesion;
 
   const configuracionCorrecta = configurarSesion();
 
   if (!configuracionCorrecta) {
+    return;
+  }
+
+  const cuentaPreviaCompletada = await ejecutarCuentaPrevia(tokenActual);
+
+  if (!cuentaPreviaCompletada) {
+    return;
+  }
+
+  if (tokenActual !== tokenSesion || !sesionIniciada) {
     return;
   }
 
@@ -337,18 +443,18 @@ function iniciarSesion(event) {
 
 // Pausa una sesión en ejecución.
 function pausarSesion() {
-  if (!sesionIniciada || estaPausado) {
+  if (!sesionIniciada || estaPausado || cuentaPreviaActiva) {
     return;
   }
 
-  detenerIntervalo();
+  detenerTemporizador();
   estaPausado = true;
   actualizarEstadoVisual();
 }
 
 // Reanuda una sesión pausada.
 function reanudarSesion() {
-  if (!sesionIniciada || !estaPausado) {
+  if (!sesionIniciada || !estaPausado || cuentaPreviaActiva) {
     return;
   }
 
@@ -359,7 +465,8 @@ function reanudarSesion() {
 
 // Reinicia la aplicación al estado inicial.
 function reiniciarSesion() {
-  detenerIntervalo();
+  tokenSesion++;
+  detenerProcesosActivos();
 
   duracionTrabajoSegundos = 0;
   duracionDescansoSegundos = 0;
@@ -369,6 +476,7 @@ function reiniciarSesion() {
   esTrabajo = true;
   estaPausado = false;
   sesionIniciada = false;
+  cuentaPreviaActiva = false;
   tiempoRestanteSegundos = 0;
 
   formularioTemporizador.reset();
